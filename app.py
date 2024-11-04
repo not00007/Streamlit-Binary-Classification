@@ -8,18 +8,14 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import plot_confusion_matrix, plot_roc_curve, plot_precision_recall_curve
+from sklearn.metrics import ConfusionMatrixDisplay, RocCurveDisplay, PrecisionRecallDisplay
 from sklearn.metrics import precision_score, recall_score 
 
 def main():
-    ################ Step 1 Create Web Title #####################
-
     st.title("Binary Classification Streamlit App")
     st.sidebar.title("Binary Classification Streamlit App")
     st.markdown(" เห็ดนี้กินได้หรือไม่??? 🍄‍🟫🍄‍🟫🍄‍🟫")
     st.sidebar.markdown(" เห็ดนี้กินได้หรือไม่??? 🍄‍🟫🍄‍🟫🍄‍🟫")
-
-    ############### Step 2 Load dataset and Preprocessing data ##########
 
     @st.cache_data(persist=True)
     def load_data():
@@ -40,23 +36,23 @@ def main():
         x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=0)
         return x_train, x_test, y_train, y_test
     
-    def plot_metrics(metrics_list):
+    def plot_metrics(metrics_list, model, x_test, y_test, class_names):
         if 'Confusion Matrix' in metrics_list:
             st.subheader("Confusion Matrix")
             fig, ax = plt.subplots()
-            plot_confusion_matrix(model, x_test, y_test, display_labels=class_names, ax=ax)
+            ConfusionMatrixDisplay.from_estimator(model, x_test, y_test, display_labels=class_names, ax=ax)
             st.pyplot(fig) 
         
         if 'ROC Curve' in metrics_list:
             st.subheader("ROC Curve")
             fig, ax = plt.subplots()
-            plot_roc_curve(model, x_test, y_test, ax=ax)
+            RocCurveDisplay.from_estimator(model, x_test, y_test, ax=ax)
             st.pyplot(fig)
         
         if 'Precision-Recall Curve' in metrics_list:
             st.subheader("Precision-Recall Curve")
             fig, ax = plt.subplots()
-            plot_precision_recall_curve(model, x_test, y_test, ax=ax)
+            PrecisionRecallDisplay.from_estimator(model, x_test, y_test, ax=ax)
             st.pyplot(fig)
 
     df = load_data()
@@ -65,13 +61,11 @@ def main():
     st.sidebar.subheader("Choose Classifiers")
     classifier = st.sidebar.selectbox("Classifier", ("Support Vector Machine (SVM)", "Logistic Regression", "Random Forest"))
 
-    ################ SVM Classifier ################
     if classifier == 'Support Vector Machine (SVM)':
         st.sidebar.subheader("Model Hyperparameters")
         C = st.sidebar.number_input("C (Regularization parameter)", 0.01, 10.0, step=0.01, key='C')
         kernel = st.sidebar.radio("Kernel", ("rbf", "linear"), key='kernel')
         gamma = st.sidebar.radio("Gamma (Kernel Coefficient)", ("scale", "auto"), key='gamma')
-
         metrics = st.sidebar.multiselect("What metrics to plot?", ("Confusion Matrix", "ROC Curve", "Precision-Recall Curve"))
 
         if st.sidebar.button("Classify", key='classify'):
@@ -83,13 +77,11 @@ def main():
             st.write("Accuracy: ", accuracy.round(2))
             st.write("Precision: ", precision_score(y_test, y_pred, labels=class_names).round(2))
             st.write("Recall: ", recall_score(y_test, y_pred, labels=class_names).round(2))
-            plot_metrics(metrics)
+            plot_metrics(metrics, model, x_test, y_test, class_names)
 
-    ################ Logistic Regression Classifier ################
     if classifier == 'Logistic Regression':
         st.sidebar.subheader("Model Hyperparameters")
         C = st.sidebar.number_input("C (Regularization parameter)", 0.01, 10.0, step=0.01, key='C_LR')
-
         metrics = st.sidebar.multiselect("What metrics to plot?", ("Confusion Matrix", "ROC Curve", "Precision-Recall Curve"))
 
         if st.sidebar.button("Classify", key='classify_lr'):
@@ -101,14 +93,12 @@ def main():
             st.write("Accuracy: ", accuracy.round(2))
             st.write("Precision: ", precision_score(y_test, y_pred, labels=class_names).round(2))
             st.write("Recall: ", recall_score(y_test, y_pred, labels=class_names).round(2))
-            plot_metrics(metrics)
+            plot_metrics(metrics, model, x_test, y_test, class_names)
 
-    ################ Random Forest Classifier ################
     if classifier == 'Random Forest':
         st.sidebar.subheader("Model Hyperparameters")
         n_estimators = st.sidebar.number_input("Number of trees in the forest", 100, 5000, step=10, key='n_estimators')
         max_depth = st.sidebar.number_input("Maximum depth of the tree", 1, 20, step=1, key='max_depth')
-
         metrics = st.sidebar.multiselect("What metrics to plot?", ("Confusion Matrix", "ROC Curve", "Precision-Recall Curve"))
 
         if st.sidebar.button("Classify", key='classify_rf'):
@@ -120,13 +110,11 @@ def main():
             st.write("Accuracy: ", accuracy.round(2))
             st.write("Precision: ", precision_score(y_test, y_pred, labels=class_names).round(2))
             st.write("Recall: ", recall_score(y_test, y_pred, labels=class_names).round(2))
-            plot_metrics(metrics)
+            plot_metrics(metrics, model, x_test, y_test, class_names)
 
-    ################ Show Raw Data ################
     if st.sidebar.checkbox("Show raw data", False):
         st.subheader("Mushroom Dataset")
         st.write(df)
 
 if __name__ == '__main__':
     main()
-
